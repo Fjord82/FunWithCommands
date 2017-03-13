@@ -5,6 +5,7 @@
  */
 package funwithcommands.gui.controller;
 
+import funwithcommands.gui.command.ClearAllCommand;
 import funwithcommands.gui.command.ICommand;
 import funwithcommands.gui.model.WordModel;
 import java.net.URL;
@@ -16,6 +17,9 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 
 /**
  * FXML Controller class
@@ -53,13 +57,17 @@ public class MainViewController implements Initializable
         undoneCommands = new LinkedList<>();
         listWords.setItems(model.getWordList());
         txtInput.requestFocus();
+        menuUndo.setAccelerator(new KeyCodeCombination(KeyCode.Z, KeyCombination.CONTROL_DOWN));
+        menuRedo.setAccelerator(new KeyCodeCombination(KeyCode.Y, KeyCombination.CONTROL_DOWN));
         updateCommandMenuItemsState();
     }
 
     @FXML
     private void onButtonClearAll(ActionEvent event)
     {
-        //TODO implement Clear all command here!!!
+        ICommand command = new ClearAllCommand(model);
+        invokeCommand(command);
+        txtInput.requestFocus();
     }
 
     /**
@@ -89,16 +97,18 @@ public class MainViewController implements Initializable
                     model.removeWord(word);
                 }
             };
-            
-            
-            
-            command.execute(); //We have to execute the ICommand for stuff to happen!
-            executedCommands.add(command); //Also we must add it to the list of executed commands if it should be undoable.
-            undoneCommands.clear(); //We changed the current "thread of commands" an therefore we should not be able to redo something that we no longer did wan't to do, or didn't wan't to do... Arrgh, you get it, right?
-            updateCommandMenuItemsState(); //Som UX stuff, yeah sweet..
+            invokeCommand(command);
         }
         txtInput.clear();           //Quality of life right here
         txtInput.requestFocus();    //Mmmh hm!
+    }
+
+    private void invokeCommand(ICommand command)
+    {
+        command.execute(); //We have to execute the ICommand for stuff to happen!
+        executedCommands.add(command); //Also we must add it to the list of executed commands if it should be undoable.
+        undoneCommands.clear(); //We changed the current "thread of commands" an therefore we should not be able to redo something that we no longer did wan't to do, or didn't wan't to do... Arrgh, you get it, right?
+        updateCommandMenuItemsState(); //Som UX stuff, yeah sweet..
     }
 
     /**
@@ -144,8 +154,7 @@ public class MainViewController implements Initializable
         if (executedCommands.isEmpty())
         {
             menuUndo.setDisable(true);
-        }
-        else
+        } else
         {
             menuUndo.setDisable(false);
         }
@@ -153,8 +162,7 @@ public class MainViewController implements Initializable
         if (undoneCommands.isEmpty())
         {
             menuRedo.setDisable(true);
-        }
-        else
+        } else
         {
             menuRedo.setDisable(false);
         }
